@@ -1,4 +1,5 @@
 .PHONY: build test lint run docker-run docker-build
+export GOOS = linux
 
 docker-build:
 	docker build -f Dockerfile.build -t oci-container:build .
@@ -16,6 +17,6 @@ test:
 run:
 	go run ./cmd/oci-runtime
 lint:
-	GOOS=linux golangci-lint run  ./...
+	golangci-lint run  ./...
 lint-diff:
-	GOOS=linux golangci-lint run --new-from-rev HEAD~
+	golangci-lint run --new-from-rev HEAD~

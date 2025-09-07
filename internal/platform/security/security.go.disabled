@@ -1,7 +1,6 @@
 package security
 
-import "golang.org/x/sys/unix"
-
+/**
 func getSeccompMode() (int, error) {
 	// PR_GET_SECCOMP = 21
 	mode, _, errno := unix.Syscall6(unix.SYS_PRCTL, unix.PR_GET_SECCOMP, 0, 0, 0, 0, 0)
@@ -12,7 +11,7 @@ func getSeccompMode() (int, error) {
 }
 
 // structures du kernel (capget)
-/**
+
 func hasCapSysAdmin() (bool, error) {
 	hdr := &unix.CapUserHeader_t{Version: unix.LINUX_CAPABILITY_VERSION_3, Pid: 0} // self
 	var data unix.CapUserData_t

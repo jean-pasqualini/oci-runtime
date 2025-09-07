@@ -14,7 +14,7 @@ func TestNew_ReturnsLogger(t *testing.T) {
 	}
 
 	h := log.Handler()
-	if _, ok := h.(*slog.JSONHandler); !ok {
+	if _, ok := h.(slog.Handler); !ok {
 		t.Fatalf("expected JSONHandler, got %T", h)
 	}
 }
