@@ -1,0 +1,48 @@
+run:
+  timeout: 3m
+  tests: false
+  modules-download-mode: readonly # or "readonly"/"mod" depending on your workflow
+  allow-parallel-runners: true
+
+linters:
+  enable:
+    - govet
+    - staticcheck    # already includes gosimple + unused
+    - ineffassign    # optional, overlaps but cheap
+    - errcheck
+    - revive
+    - gocritic
+    - misspell
+    - gofumpt
+  disable:
+    - depguard       # enable later if you need import allow/deny lists
+    - funlen         # tune later if you care about function length
+    - gocyclo        # complexity—can be noisy
+    - dupl           # code duplication—noisy on tests/templates
+
+linters-settings:
+  revive:
+    severity: warning
+    rules:
+      - name: blank-imports
+      - name: exported
+        arguments: ["disableStutteringCheck"]
+      - name: errorf
+      - name: receiver-naming
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+  gofumpt:
+    extra-rules: true
+
+issues:
+  exclude-use-default: false
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+output:
+  formats: [colored-line-number]
+  sort-results: true
+
+files:
+  exclude: []

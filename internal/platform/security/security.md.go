@@ -1,0 +1,29 @@
+package security
+
+import "golang.org/x/sys/unix"
+
+func getSeccompMode() (int, error) {
+	// PR_GET_SECCOMP = 21
+	mode, _, errno := unix.Syscall6(unix.SYS_PRCTL, unix.PR_GET_SECCOMP, 0, 0, 0, 0, 0)
+	if errno != 0 {
+		return 0, errno
+	}
+	return int(mode), nil // 0=off, 2=filter
+}
+
+// structures du kernel (capget)
+/**
+func hasCapSysAdmin() (bool, error) {
+	hdr := &unix.CapUserHeader_t{Version: unix.LINUX_CAPABILITY_VERSION_3, Pid: 0} // self
+	var data unix.CapUserData_t
+	if err := unix.Capget(hdr, &data); err != nil {
+		return false, err
+	}
+	// bit de CAP_SYS_ADMIN (cap 21) dans effective set (EFFECTIVE)
+	const CAP_SYS_ADMIN = 21
+	// Version_3 split en 64 bits : data.Effective est un uint32 (caps 0..31 ici)
+	has := (data.Effective & (1 << CAP_SYS_ADMIN)) != 0
+	return has, nil
+}
+
+*/

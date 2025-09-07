@@ -1,0 +1,5 @@
+.idea
+root
+./oci-runtime
+*.log
+*.txt

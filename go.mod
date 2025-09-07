@@ -1,0 +1,8 @@
+module oci-runtime
+
+go 1.25.0
+
+require (
+	github.com/lmittmann/tint v1.1.2
+	golang.org/x/sys v0.35.0
+)

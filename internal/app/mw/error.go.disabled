@@ -1,0 +1,19 @@
+package mw
+
+import (
+	"context"
+	"log/slog"
+)
+
+func WithRecover[C any](logger *slog.Logger) Middleware[C] { // Middleware factory
+	return func(next HandlerFunc[C]) HandlerFunc[C] { // Middleware
+		return func(ctx context.Context, cmd C) (err error) { // Handler
+			defer func() {
+				if r := recover(); r != nil {
+
+				}
+			}()
+			return next(ctx, cmd)
+		}
+	}
+}
