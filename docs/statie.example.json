@@ -1,0 +1,412 @@
+{
+  "id": "mycontainer3",
+  "init_process_pid": 45074,
+  "init_process_start": 2577338,
+  "created": "2025-09-09T19:41:16.185701055Z",
+  "config": {
+    "no_pivot_root": false,
+    "parent_death_signal": 0,
+    "rootfs": "/tmp/mycontainer/rootfs",
+    "umask": null,
+    "readonlyfs": true,
+    "rootPropagation": 0,
+    "mounts": [
+      {
+        "source": "proc",
+        "destination": "/proc",
+        "device": "proc",
+        "flags": 0,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      },
+      {
+        "source": "tmpfs",
+        "destination": "/dev",
+        "device": "tmpfs",
+        "flags": 16777218,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "mode=755,size=65536k",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      },
+      {
+        "source": "devpts",
+        "destination": "/dev/pts",
+        "device": "devpts",
+        "flags": 10,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "newinstance,ptmxmode=0666,mode=0620,gid=5",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      },
+      {
+        "source": "shm",
+        "destination": "/dev/shm",
+        "device": "tmpfs",
+        "flags": 14,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "mode=1777,size=65536k",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      },
+      {
+        "source": "mqueue",
+        "destination": "/dev/mqueue",
+        "device": "mqueue",
+        "flags": 14,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      },
+      {
+        "source": "sysfs",
+        "destination": "/sys",
+        "device": "sysfs",
+        "flags": 15,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      },
+      {
+        "source": "cgroup",
+        "destination": "/sys/fs/cgroup",
+        "device": "cgroup",
+        "flags": 2097167,
+        "cleared_flags": 0,
+        "propagation_flags": null,
+        "data": "",
+        "relabel": "",
+        "rec_attr": null,
+        "extensions": 0
+      }
+    ],
+    "devices": [
+      {
+        "type": 99,
+        "major": 1,
+        "minor": 3,
+        "permissions": "rwm",
+        "allow": true,
+        "path": "/dev/null",
+        "file_mode": 438,
+        "uid": 0,
+        "gid": 0
+      },
+      {
+        "type": 99,
+        "major": 1,
+        "minor": 8,
+        "permissions": "rwm",
+        "allow": true,
+        "path": "/dev/random",
+        "file_mode": 438,
+        "uid": 0,
+        "gid": 0
+      },
+      {
+        "type": 99,
+        "major": 1,
+        "minor": 7,
+        "permissions": "rwm",
+        "allow": true,
+        "path": "/dev/full",
+        "file_mode": 438,
+        "uid": 0,
+        "gid": 0
+      },
+      {
+        "type": 99,
+        "major": 5,
+        "minor": 0,
+        "permissions": "rwm",
+        "allow": true,
+        "path": "/dev/tty",
+        "file_mode": 438,
+        "uid": 0,
+        "gid": 0
+      },
+      {
+        "type": 99,
+        "major": 1,
+        "minor": 5,
+        "permissions": "rwm",
+        "allow": true,
+        "path": "/dev/zero",
+        "file_mode": 438,
+        "uid": 0,
+        "gid": 0
+      },
+      {
+        "type": 99,
+        "major": 1,
+        "minor": 9,
+        "permissions": "rwm",
+        "allow": true,
+        "path": "/dev/urandom",
+        "file_mode": 438,
+        "uid": 0,
+        "gid": 0
+      }
+    ],
+    "mount_label": "",
+    "hostname": "runc",
+    "domainname": "",
+    "namespaces": [
+      {
+        "type": "NEWPID",
+        "path": ""
+      },
+      {
+        "type": "NEWNET",
+        "path": ""
+      },
+      {
+        "type": "NEWIPC",
+        "path": ""
+      },
+      {
+        "type": "NEWUTS",
+        "path": ""
+      },
+      {
+        "type": "NEWNS",
+        "path": ""
+      },
+      {
+        "type": "NEWCGROUP",
+        "path": ""
+      }
+    ],
+    "capabilities": {
+      "Bounding": [
+        "CAP_AUDIT_WRITE",
+        "CAP_KILL",
+        "CAP_NET_BIND_SERVICE"
+      ],
+      "Effective": [
+        "CAP_AUDIT_WRITE",
+        "CAP_KILL",
+        "CAP_NET_BIND_SERVICE"
+      ],
+      "Inheritable": null,
+      "Permitted": [
+        "CAP_AUDIT_WRITE",
+        "CAP_KILL",
+        "CAP_NET_BIND_SERVICE"
+      ],
+      "Ambient": null
+    },
+    "networks": [
+      {
+        "type": "loopback",
+        "name": "",
+        "bridge": "",
+        "mac_address": "",
+        "address": "",
+        "gateway": "",
+        "ipv6_address": "",
+        "ipv6_gateway": "",
+        "mtu": 0,
+        "txqueuelen": 0,
+        "host_interface_name": "",
+        "hairpin_mode": false
+      }
+    ],
+    "routes": null,
+    "cgroups": {
+      "name": "mycontainer3",
+      "path": "",
+      "scope_prefix": "",
+      "devices": [
+        {
+          "type": 97,
+          "major": -1,
+          "minor": -1,
+          "permissions": "rwm",
+          "allow": false
+        },
+        {
+          "type": 99,
+          "major": -1,
+          "minor": -1,
+          "permissions": "m",
+          "allow": true
+        },
+        {
+          "type": 98,
+          "major": -1,
+          "minor": -1,
+          "permissions": "m",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 1,
+          "minor": 3,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 1,
+          "minor": 8,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 1,
+          "minor": 7,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 5,
+          "minor": 0,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 1,
+          "minor": 5,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 1,
+          "minor": 9,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 136,
+          "minor": -1,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 5,
+          "minor": 2,
+          "permissions": "rwm",
+          "allow": true
+        },
+        {
+          "type": 99,
+          "major": 10,
+          "minor": 200,
+          "permissions": "rwm",
+          "allow": true
+        }
+      ],
+      "memory": 0,
+      "memory_reservation": 0,
+      "memory_swap": 0,
+      "cpu_shares": 0,
+      "cpu_quota": 0,
+      "cpu_burst": null,
+      "cpu_period": 0,
+      "cpu_rt_quota": 0,
+      "cpu_rt_period": 0,
+      "cpuset_cpus": "",
+      "cpuset_mems": "",
+      "pids_limit": 0,
+      "blkio_weight": 0,
+      "blkio_leaf_weight": 0,
+      "blkio_weight_device": null,
+      "blkio_throttle_read_bps_device": null,
+      "blkio_throttle_write_bps_device": null,
+      "blkio_throttle_read_iops_device": null,
+      "blkio_throttle_write_iops_device": null,
+      "freezer": "",
+      "hugetlb_limit": null,
+      "oom_kill_disable": false,
+      "memory_swappiness": null,
+      "net_prio_ifpriomap": null,
+      "net_cls_classid_u": 0,
+      "rdma": null,
+      "cpu_weight": 0,
+      "unified": null,
+      "memory_check_before_update": false,
+      "Systemd": false,
+      "Rootless": false
+    },
+    "uid_mappings": null,
+    "gid_mappings": null,
+    "mask_paths": [
+      "/proc/acpi",
+      "/proc/asound",
+      "/proc/kcore",
+      "/proc/keys",
+      "/proc/latency_stats",
+      "/proc/timer_list",
+      "/proc/timer_stats",
+      "/proc/sched_debug",
+      "/sys/firmware",
+      "/proc/scsi"
+    ],
+    "readonly_paths": [
+      "/proc/bus",
+      "/proc/fs",
+      "/proc/irq",
+      "/proc/sys",
+      "/proc/sysrq-trigger"
+    ],
+    "sysctl": null,
+    "seccomp": null,
+    "no_new_privileges": true,
+    "Hooks": {
+      "createContainer": null,
+      "createRuntime": null,
+      "poststart": null,
+      "poststop": null,
+      "prestart": null,
+      "startContainer": null
+    },
+    "version": "1.2.0",
+    "labels": [
+      "bundle=/tmp/mycontainer"
+    ],
+    "no_new_keyring": false
+  },
+  "rootless": false,
+  "cgroup_paths": {
+    "": "/sys/fs/cgroup/mycontainer3"
+  },
+  "namespace_paths": {
+    "NEWCGROUP": "/proc/45074/ns/cgroup",
+    "NEWIPC": "/proc/45074/ns/ipc",
+    "NEWNET": "/proc/45074/ns/net",
+    "NEWNS": "/proc/45074/ns/mnt",
+    "NEWPID": "/proc/45074/ns/pid",
+    "NEWTIME": "/proc/45074/ns/time",
+    "NEWUSER": "/proc/45074/ns/user",
+    "NEWUTS": "/proc/45074/ns/uts"
+  },
+  "external_descriptors": [
+    "/0",
+    "/0",
+    "/0"
+  ],
+  "intel_rdt_path": ""
+}

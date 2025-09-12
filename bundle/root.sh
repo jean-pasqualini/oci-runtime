@@ -1,7 +1,8 @@
 #!/bin/bash
 set -e
 
-ROOT=/app/root
+ROOT=/app/bundle/root
+rm -rf $ROOT
 mkdir -p $ROOT/{bin,lib,lib/aarch64-linux-gnu}
 
 cp -av /bin/bash $ROOT/bin/

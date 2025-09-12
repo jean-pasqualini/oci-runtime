@@ -4,8 +4,8 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"oci-runtime/internal/platform/logging"
-	"oci-runtime/internal/platform/xerr"
+	"oci-runtime/internal/infrastructure/technical/logging"
+	"oci-runtime/internal/infrastructure/technical/xerr"
 	"os"
 )
 

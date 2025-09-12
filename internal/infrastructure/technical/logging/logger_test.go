@@ -2,7 +2,7 @@ package logging_test
 
 import (
 	"log/slog"
-	"oci-runtime/internal/platform/logging"
+	"oci-runtime/internal/infrastructure/technical/logging"
 	"testing"
 )
 

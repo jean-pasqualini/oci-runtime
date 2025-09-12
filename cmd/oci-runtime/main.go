@@ -4,17 +4,26 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/urfave/cli/v3"
 	"oci-runtime/internal/app"
 	"oci-runtime/internal/app/mw"
-	"oci-runtime/internal/platform/config"
-	"oci-runtime/internal/platform/logging"
+	"oci-runtime/internal/infrastructure/linux/mount"
+	"oci-runtime/internal/infrastructure/linux/network"
+	"oci-runtime/internal/infrastructure/linux/ns"
+	"oci-runtime/internal/infrastructure/linux/proc"
+	"oci-runtime/internal/infrastructure/linux/rs"
+	"oci-runtime/internal/infrastructure/technical/config"
+	"oci-runtime/internal/infrastructure/technical/logging"
 	"os"
+	"sort"
 )
 
 func usage() {
 	_, _ = fmt.Fprintf(os.Stderr, `oci-runtime
 Usage:
   oci-runtime run
+  oci-runtime init
+  oci-runtime check
 `)
 	os.Exit(2)
 }
@@ -31,33 +40,49 @@ func main() {
 	logger := logging.New(subcmd)
 	ctx := context.Background()
 
-	runHandler := mw.Chain(
-		app.NewRunHandler(),
-		mw.WithLogging[app.RunCmd]("app", logger),
+	cmd := NewCmd(
+		Actions{
+			Run: func() mw.HandlerFunc[app.RunCmd] {
+				return mw.Chain(
+					app.NewRunHandler(),
+					mw.WithLogging[app.RunCmd]("app", logger),
+				)
+			},
+			Create: func() mw.HandlerFunc[app.CreateCmd] {
+				return mw.Chain(
+					app.NewCreateHandler(),
+					mw.WithLogging[app.CreateCmd]("app", logger),
+				)
+			},
+			Start: func() mw.HandlerFunc[app.StartCmd] {
+				return mw.Chain(
+					app.NewStartHandler(),
+					mw.WithLogging[app.StartCmd]("app", logger),
+				)
+			},
+			Init: func() mw.HandlerFunc[app.InitCmd] {
+				return mw.Chain(
+					app.NewInitHandler(app.Ports{
+						Mount: mount.NewManager(),
+						NS:    ns.NewManager(),
+						Root:  rs.NewManager(),
+						Proc:  proc.NewManager(),
+						Net:   network.NewManager(),
+					}),
+					mw.WithLogging[app.InitCmd]("app", logger),
+				)
+			},
+			Check: func() mw.HandlerFunc[app.CheckComamnd] {
+				return mw.Chain(
+					app.NewCheckHandler(),
+					mw.WithLogging[app.CheckComamnd]("app", logger),
+				)
+			},
+		},
 	)
 
-	initHandler := mw.Chain(
-		app.NewInitHandler(),
-		mw.WithLogging[app.InitCmd]("app", logger),
-	)
-
-	checkHandler := mw.Chain(
-		app.NewCheckHandler(),
-		mw.WithLogging[app.CheckComamnd]("app", logger),
-	)
-
-	var err error
-	switch subcmd {
-	case "run":
-		err = runHandler(ctx, app.RunCmd{})
-	case "init":
-		err = initHandler(ctx, app.InitCmd{})
-	case "check":
-		err = checkHandler(ctx, app.CheckComamnd{})
-	default:
-		usage()
-	}
-
+	sort.Sort(cli.FlagsByName(cmd.Flags))
+	err := cmd.Run(ctx, os.Args)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

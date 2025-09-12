@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"golang.org/x/sys/unix"
 	"oci-runtime/internal/app/mw"
-	"oci-runtime/internal/platform/logging"
+	"oci-runtime/internal/infrastructure/technical/logging"
 )
 
 type CheckComamnd struct {

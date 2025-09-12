@@ -3,3 +3,4 @@ root
 ./oci-runtime
 *.log
 *.txt
+*.tar.gz

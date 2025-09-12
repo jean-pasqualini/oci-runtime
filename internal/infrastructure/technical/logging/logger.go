@@ -13,7 +13,7 @@ type Logger = slog.Logger
 func New(name string) *Logger {
 	h := tint.NewHandler(os.Stdout, &tint.Options{
 		TimeFormat: time.RFC3339,
-		Level:      slog.LevelInfo,
+		Level:      slog.LevelDebug,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
 			if a.Key == slog.MessageKey {
 				a.Value = slog.StringValue(fmt.Sprintf("[%s] %s", name, a.Value.String()))
