@@ -26,7 +26,7 @@ func do(ctx context.Context) error {
 	}
 	cmd := exec.CommandContext(ctx,
 		"/tmp/oci-runtime",
-		[]string{"run", "--root", "/tmp/state", "--bundle", "/app/bundle", "cid"}...,
+		[]string{"create", "--root", "/tmp/state", "--bundle", "/app/bundle", "cid"}...,
 	)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGKILL,
@@ -39,6 +39,21 @@ func do(ctx context.Context) error {
 		return err
 	}
 
+	cmd = exec.CommandContext(ctx,
+		"/tmp/oci-runtime",
+		[]string{"start", "--root", "/tmp/state", "cid"}...,
+	)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Pdeathsig: syscall.SIGKILL,
+		Setpgid:   true,
+	}
+	// Optional
+	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
+
+	if err := cmd.Run(); err != nil {
+		return err
+	}
+	
 	// Wait init
 	var waitInit syscall.WaitStatus
 	_, err := syscall.Wait4(-1, &waitInit, 0, nil)

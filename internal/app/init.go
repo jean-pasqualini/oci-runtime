@@ -2,12 +2,12 @@ package app
 
 import (
 	"context"
+	"fmt"
 	"golang.org/x/sys/unix"
 	"oci-runtime/internal/app/mw"
 	"oci-runtime/internal/domain"
 	"oci-runtime/internal/infrastructure/technical/logging"
 	"oci-runtime/internal/infrastructure/technical/xerr"
-	"oci-runtime/internal/infrastructure/transport/ipc"
 	"os"
 	"strconv"
 )
@@ -15,11 +15,12 @@ import (
 type InitCmd struct{}
 
 type Ports struct {
-	Mount MountManager
-	NS    NamespaceManager
-	Root  RootSwitcher
-	Proc  Process
-	Net   NetworkManager
+	Mount      MountManager
+	NS         NamespaceManager
+	Root       RootSwitcher
+	Proc       Process
+	Net        NetworkManager
+	IpcFactory IpcFactory
 }
 
 func NewInitHandler(p Ports) mw.HandlerFunc[InitCmd] {
@@ -118,6 +119,16 @@ func (h *initHandler) configureNetwork(ctx context.Context) error {
 	return nil
 }
 
+func (h *initHandler) closeExtraFDs() error {
+	// ^uint(0) equals to the not binary, it inverts all the bit so we obtains the max value
+	// equals to UINT_MAX in C
+	if err := unix.CloseRange(3, 100, unix.CLOSE_RANGE_CLOEXEC); err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	l := logging.FromContext(ctx)
 
@@ -127,14 +138,12 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	sPipeReadFD := os.NewFile(uintptr(sPipeReadEnv), "sync-pipe-read")
 	sPipeWriteEnv, _ := strconv.Atoi(os.Getenv("FD_SYNC_WRITE"))
 	sPipeWriteFD := os.NewFile(uintptr(sPipeWriteEnv), "sync-pipe-write")
-	syncPipe := ipc.NewSyncPipe(sPipeReadFD, sPipeWriteFD)
-	defer syncPipe.Close()
+	syncIpc := h.p.IpcFactory(sPipeReadFD, sPipeWriteFD)
 
 	var containerConfig domain.ContainerConfiguration
-	if err := syncPipe.Recv(containerConfig); err != nil {
+	if err := syncIpc.Recv(&containerConfig); err != nil {
 		return err
 	}
-	l.Error("decoded", "c", containerConfig)
 
 	if err := h.prepareProcess(ctx); err != nil {
 		l.Warn("hostname set failed", "error", err)
@@ -148,6 +157,33 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	if err := h.configureNetwork(ctx); err != nil {
 		return xerr.Op("configure network", err, xerr.KV{})
 	}
+	var initDone bool
+	err := syncIpc.Send(&initDone)
+	if err != nil {
+		return err
+	}
+
+	ePipeReadEnv, err := strconv.Atoi(os.Getenv("FD_EXEC"))
+	if err != nil {
+		return err
+	}
+	l.Info("waiting start order", "execPipe", ePipeReadEnv)
+	//ePipeReadFD, err := os.OpenFile(fmt.Sprintf("/proc/self/fd/%d", ePipeReadEnv), unix.O_RDONLY|unix.O_CLOEXEC, 0)
+	ePipeReadFD, err := os.OpenFile(fmt.Sprintf("/proc/self/fd/%d", ePipeReadEnv), os.O_RDONLY, 0)
+	//ePipeReadFD := os.NewFile(uintptr(ePipeReadEnv), "exec.pipe")
+	execIpc := h.p.IpcFactory(ePipeReadFD, nil)
+
+	var waitingStart bool
+	if err := execIpc.Recv(&waitingStart); err != nil {
+		return err
+	}
+	l.Info("start order received, run entrypoint")
+
+	// Ensure all FD are closed to avoid leak security leak to the entry point
+	if err := h.closeExtraFDs(); err != nil {
+		return err
+	}
+
 	if err := h.launchEntrypoint(ctx, containerConfig.Process.Args); err != nil {
 		return xerr.Op("run main process", err, xerr.KV{})
 	}

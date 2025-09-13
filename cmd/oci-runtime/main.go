@@ -14,6 +14,7 @@ import (
 	"oci-runtime/internal/infrastructure/linux/rs"
 	"oci-runtime/internal/infrastructure/technical/config"
 	"oci-runtime/internal/infrastructure/technical/logging"
+	"oci-runtime/internal/infrastructure/transport/ipc"
 	"os"
 	"sort"
 )
@@ -42,32 +43,27 @@ func main() {
 
 	cmd := NewCmd(
 		Actions{
-			Run: func() mw.HandlerFunc[app.RunCmd] {
-				return mw.Chain(
-					app.NewRunHandler(),
-					mw.WithLogging[app.RunCmd]("app", logger),
-				)
-			},
 			Create: func() mw.HandlerFunc[app.CreateCmd] {
 				return mw.Chain(
-					app.NewCreateHandler(),
+					app.NewCreateHandler(ipc.NewSyncPipe),
 					mw.WithLogging[app.CreateCmd]("app", logger),
 				)
 			},
 			Start: func() mw.HandlerFunc[app.StartCmd] {
 				return mw.Chain(
-					app.NewStartHandler(),
+					app.NewStartHandler(ipc.NewSyncPipe),
 					mw.WithLogging[app.StartCmd]("app", logger),
 				)
 			},
 			Init: func() mw.HandlerFunc[app.InitCmd] {
 				return mw.Chain(
 					app.NewInitHandler(app.Ports{
-						Mount: mount.NewManager(),
-						NS:    ns.NewManager(),
-						Root:  rs.NewManager(),
-						Proc:  proc.NewManager(),
-						Net:   network.NewManager(),
+						Mount:      mount.NewManager(),
+						NS:         ns.NewManager(),
+						Root:       rs.NewManager(),
+						Proc:       proc.NewManager(),
+						Net:        network.NewManager(),
+						IpcFactory: ipc.NewSyncPipe,
 					}),
 					mw.WithLogging[app.InitCmd]("app", logger),
 				)

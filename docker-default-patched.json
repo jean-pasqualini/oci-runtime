@@ -817,7 +817,8 @@
         "pidfd_open",
         "pidfd_send_signal",
         "pivot_root",
-        "rseq"
+        "rseq",
+        "close_range"
       ]
     }
   ]

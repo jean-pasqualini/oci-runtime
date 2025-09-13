@@ -3,9 +3,11 @@ package app
 import (
 	"context"
 	"encoding/json"
+	"io"
 	"oci-runtime/internal/domain"
 )
 
+type IpcFactory func(rPipe io.Reader, wPipe io.Writer) Ipc
 type Ipc interface {
 	Send(data any) error
 	Recv(v any) error

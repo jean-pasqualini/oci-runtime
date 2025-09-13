@@ -9,7 +9,6 @@ import (
 )
 
 type Actions struct {
-	Run    func() mw.HandlerFunc[app.RunCmd]
 	Create func() mw.HandlerFunc[app.CreateCmd]
 	Start  func() mw.HandlerFunc[app.StartCmd]
 	Init   func() mw.HandlerFunc[app.InitCmd]
@@ -40,7 +39,7 @@ func NewCmd(actions Actions) *cli.Command {
 				},
 				Before: requireExactArgs(1, "<name>"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return actions.Run()(ctx, app.RunCmd{
+					if err := actions.Create()(ctx, app.CreateCmd{
 						Name:          cmd.StringArg("name"),
 						StatePath:     cmd.String("root"),
 						BundlePath:    cmd.String("bundle"),
@@ -48,6 +47,13 @@ func NewCmd(actions Actions) *cli.Command {
 						LogFormat:     cmd.String("log-format"),
 						PidFile:       cmd.String("pid-file"),
 						ConsoleSocket: cmd.String("console-socket"),
+					}); err != nil {
+						return err
+					}
+
+					return actions.Start()(ctx, app.StartCmd{
+						Name:      cmd.StringArg("name"),
+						StatePath: cmd.String("root"),
 					})
 				},
 			},
