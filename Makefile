@@ -12,26 +12,32 @@ docker-build:
 # --cap-add CAP_SYS_ADMIN
 # --security-opt seccomp=$(PWD)/docker-default-patched.json
 docker-run-unconfined: docker-build
-	docker run --privileged --security-opt seccomp=unconfined --rm -w /app -v $(PWD):/app -it oci-container:build bash
+	docker run --privileged --security-opt seccomp=unconfined --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
 docker-run-least: docker-build
-	docker run --cap-add CAP_SYS_ADMIN --cap-add CAP_NET_ADMIN	--security-opt seccomp=$(PWD)/docker-default-patched.json --rm -w /app -v $(PWD):/app -it oci-container:build bash
+	docker run --cap-add CAP_SYS_ADMIN --cap-add CAP_NET_ADMIN	--security-opt seccomp=$(PWD)/docker-default-patched.json --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
 build:
-	go build ./...
+	go build -tags $(LEVEL) -o /tmp/oci-runtime -- ./cmd/oci-runtime
 test:
 	go test ./...
 run-shim:
 	go build -tags $(LEVEL) -o /tmp/oci-runtime -- ./cmd/oci-runtime
 	go run -tags $(LEVEL) ./cmd/container-shim
-create:
-	go run -tags $(LEVEL) ./cmd/oci-runtime create --root /tmp/state --bundle /app/bundle cid
+delete:
+	rm -rf /tmp/state/cid/
+create: delete
+	go run -tags $(LEVEL) ./cmd/oci-runtime --root /tmp/state create --bundle /app/bundle cid
+create-tty: delete
+	go run -tags $(LEVEL) ./cmd/oci-runtime --root /tmp/state create --console-socket /tmp/console.socket --bundle /app/bundle cid
 start:
-	go run -tags $(LEVEL) ./cmd/oci-runtime start --root /tmp/state cid
-run:
-	go run -tags $(LEVEL) ./cmd/oci-runtime run --root /tmp/state --bundle /app/bundle cid
+	go run -tags $(LEVEL) ./cmd/oci-runtime --root /tmp/state start cid
+run: delete
+	go run -tags $(LEVEL) ./cmd/oci-runtime --root /tmp/state run --bundle /app/bundle cid
 lint:
 	golangci-lint run  ./...
 lint-diff:
 	golangci-lint run --new-from-rev HEAD~
+install-in-docker-desktop:
+	docker run -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -v /bin:/host/bin --rm -it golang:1.25 ./install-in-docker-desktop.sh
 # temp stuffs
 build-tmp:
 	go build -gcflags="all=-N -l" -tags $(LEVEL) -o /tmp/oci-runtime -- ./cmd/oci-runtime

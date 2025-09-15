@@ -5,5 +5,13 @@
   },
   "root":{
     "path":"/app/bundle/root"
-  }
+  },
+  "mounts": [
+    {
+      "source": "proc",
+      "destination": "/proc",
+      "type": "proc",
+      "options": ["nosuid", "nodev", "noexec"]
+    }
+  ]
 }

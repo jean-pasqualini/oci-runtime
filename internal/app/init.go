@@ -10,6 +10,7 @@ import (
 	"oci-runtime/internal/infrastructure/technical/xerr"
 	"os"
 	"strconv"
+	"strings"
 )
 
 type InitCmd struct{}
@@ -81,16 +82,15 @@ func (h *initHandler) configureIsolation(ctx context.Context, containerRoot stri
 	return nil
 }
 
-func (h *initHandler) setupFilesystem(ctx context.Context) error {
+func (h *initHandler) setupFilesystem(ctx context.Context, mounts []domain.ContainerMountConfiguration) error {
 	l := logging.FromContext(ctx)
-	l.Info("setup mount point /proc")
-	if err := h.p.Mount.Mount(ctx, domain.Mount{
-		Source: "proc",
-		Target: "/proc",
-		FSType: "proc",
-		Flags:  uintptr(unix.MS_NOSUID | unix.MS_NODEV | unix.MS_NOEXEC),
-	}); err != nil {
-		return xerr.Op("mount proc", err, xerr.KV{})
+	for _, m := range mounts {
+		l.Info("setup mount point", "source", m.Source, "destination", m.Destination, "type", m.Type)
+		if m.Type == "proc" {
+			if err := h.p.Mount.Mount(ctx, m); err != nil {
+				return xerr.Op("mount fs", err, xerr.KV{"destination": m.Destination})
+			}
+		}
 	}
 
 	return nil
@@ -132,8 +132,6 @@ func (h *initHandler) closeExtraFDs() error {
 func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	l := logging.FromContext(ctx)
 
-	l.Info("start")
-
 	sPipeReadEnv, _ := strconv.Atoi(os.Getenv("FD_SYNC_READ"))
 	sPipeReadFD := os.NewFile(uintptr(sPipeReadEnv), "sync-pipe-read")
 	sPipeWriteEnv, _ := strconv.Atoi(os.Getenv("FD_SYNC_WRITE"))
@@ -141,7 +139,7 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	syncIpc := h.p.IpcFactory(sPipeReadFD, sPipeWriteFD)
 
 	var containerConfig domain.ContainerConfiguration
-	if err := syncIpc.Recv(&containerConfig); err != nil {
+	if err := syncIpc.Recv(ctx, &containerConfig); err != nil {
 		return err
 	}
 
@@ -151,14 +149,14 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	if err := h.configureIsolation(ctx, containerConfig.Root.Path); err != nil {
 		return err
 	}
-	if err := h.setupFilesystem(ctx); err != nil {
+	if err := h.setupFilesystem(ctx, containerConfig.Mounts); err != nil {
 		return xerr.Op("setup filesystem", err, xerr.KV{})
 	}
 	if err := h.configureNetwork(ctx); err != nil {
 		return xerr.Op("configure network", err, xerr.KV{})
 	}
 	var initDone bool
-	err := syncIpc.Send(&initDone)
+	err := syncIpc.Send(ctx, &initDone)
 	if err != nil {
 		return err
 	}
@@ -167,17 +165,17 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	if err != nil {
 		return err
 	}
-	l.Info("waiting start order", "execPipe", ePipeReadEnv)
+	l.Debug("waiting start order", "execPipe", ePipeReadEnv)
 	//ePipeReadFD, err := os.OpenFile(fmt.Sprintf("/proc/self/fd/%d", ePipeReadEnv), unix.O_RDONLY|unix.O_CLOEXEC, 0)
 	ePipeReadFD, err := os.OpenFile(fmt.Sprintf("/proc/self/fd/%d", ePipeReadEnv), os.O_RDONLY, 0)
 	//ePipeReadFD := os.NewFile(uintptr(ePipeReadEnv), "exec.pipe")
 	execIpc := h.p.IpcFactory(ePipeReadFD, nil)
 
 	var waitingStart bool
-	if err := execIpc.Recv(&waitingStart); err != nil {
+	if err := execIpc.Recv(ctx, &waitingStart); err != nil {
 		return err
 	}
-	l.Info("start order received, run entrypoint")
+	l.Debug("start order received, run entrypoint")
 
 	// Ensure all FD are closed to avoid leak security leak to the entry point
 	if err := h.closeExtraFDs(); err != nil {
@@ -185,7 +183,9 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	}
 
 	if err := h.launchEntrypoint(ctx, containerConfig.Process.Args); err != nil {
-		return xerr.Op("run main process", err, xerr.KV{})
+		return xerr.Op("run main process", err, xerr.KV{
+			"entrypoint": strings.Join(containerConfig.Process.Args, " "),
+		})
 	}
 
 	return nil

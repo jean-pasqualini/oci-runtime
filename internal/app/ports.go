@@ -9,14 +9,14 @@ import (
 
 type IpcFactory func(rPipe io.Reader, wPipe io.Writer) Ipc
 type Ipc interface {
-	Send(data any) error
-	Recv(v any) error
+	Send(ctx context.Context, data any) error
+	Recv(ctx context.Context, v any) error
 	Close()
 }
 
 type RpcHandler func(ctx context.Context, payload json.RawMessage) json.RawMessage
 type Rpc interface {
-	Op(name string, payload json.RawMessage) (json.RawMessage, error)
+	Op(ctx context.Context, name string, payload json.RawMessage) (json.RawMessage, error)
 	Register(name string, handler RpcHandler)
 	HandleOnce(ctx context.Context) error
 	Close()
@@ -28,7 +28,7 @@ type NetworkManager interface {
 }
 type MountManager interface {
 	MakePrivate(ctx context.Context, path string) error
-	Mount(ctx context.Context, mt domain.Mount) error
+	Mount(ctx context.Context, mt domain.ContainerMountConfiguration) error
 }
 
 type NamespaceManager interface {

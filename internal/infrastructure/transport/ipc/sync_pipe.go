@@ -2,10 +2,12 @@ package ipc
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"oci-runtime/internal/app"
+	"oci-runtime/internal/infrastructure/technical/logging"
 	"oci-runtime/internal/infrastructure/technical/xerr"
 	"os"
 )
@@ -31,7 +33,8 @@ func (s *syncPipe) Close() {
 	}
 }
 
-func (s *syncPipe) Send(data any) error {
+func (s *syncPipe) Send(ctx context.Context, data any) error {
+	l := logging.FromContext(ctx)
 	if s.wPipe == nil {
 		return fmt.Errorf("no pipe write, can't send data")
 	}
@@ -42,12 +45,12 @@ func (s *syncPipe) Send(data any) error {
 		return xerr.Op("Send", err, xerr.KV{})
 	}
 
-	fmt.Printf("Sent: %+v", dbg.String())
+	l.Debug("send ipc packet", "content", dbg.String())
 
 	return nil
 }
 
-func (s *syncPipe) Recv(data any) error {
+func (s *syncPipe) Recv(_ context.Context, data any) error {
 	if s.rPipe == nil {
 		return fmt.Errorf("no pipe read, can't read data")
 	}

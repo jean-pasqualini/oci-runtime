@@ -43,8 +43,8 @@ func (r *rpcPipe) Close() {
 	r.ipc.Close()
 }
 
-func (r *rpcPipe) Op(name string, payload json.RawMessage) (json.RawMessage, error) {
-	if err := r.ipc.Send(rpcRequest{
+func (r *rpcPipe) Op(ctx context.Context, name string, payload json.RawMessage) (json.RawMessage, error) {
+	if err := r.ipc.Send(ctx, rpcRequest{
 		ID:      r.id(),
 		OpName:  name,
 		payload: payload,
@@ -53,7 +53,7 @@ func (r *rpcPipe) Op(name string, payload json.RawMessage) (json.RawMessage, err
 	}
 
 	var resp rpcResponse
-	if err := r.ipc.Recv(&resp); err != nil {
+	if err := r.ipc.Recv(ctx, &resp); err != nil {
 		return nil, err
 	}
 
@@ -66,7 +66,7 @@ func (r *rpcPipe) Register(name string, handler app.RpcHandler) {
 
 func (r *rpcPipe) HandleOnce(ctx context.Context) error {
 	var req rpcRequest
-	if err := r.ipc.Recv(&req); err != nil {
+	if err := r.ipc.Recv(ctx, &req); err != nil {
 		return err
 	}
 	h := r.handlers[req.OpName]
@@ -79,7 +79,7 @@ func (r *rpcPipe) HandleOnce(ctx context.Context) error {
 	if err != nil {
 		return nil
 	}
-	return r.ipc.Send(rpcResponse{
+	return r.ipc.Send(ctx, rpcResponse{
 		ReplyTo: req.ID,
 		Payload: payloadJson,
 	})

@@ -16,8 +16,16 @@ func NewManager() *manager {
 	return &manager{}
 }
 
-func (m *manager) Mount(ctx context.Context, mt domain.Mount) error {
+func (m *manager) Mount(ctx context.Context, mc domain.ContainerMountConfiguration) error {
 	l := logging.FromContext(ctx)
+	mt := mapToMount(mc)
+	/**
+	mt := Mount{
+		Source: "proc",
+		Target: "/proc",
+		FSType: "proc",
+		Flags:  uintptr(unix.MS_NOSUID | unix.MS_NODEV | unix.MS_NOEXEC),
+	*/
 	l = l.With("params", mt)
 	l.Debug("unmount")
 	_ = unix.Unmount(mt.Target, 0)
@@ -25,6 +33,10 @@ func (m *manager) Mount(ctx context.Context, mt domain.Mount) error {
 	if err := os.MkdirAll(mt.Target, 0o555); err != nil {
 		return xerr.Op("mkdir "+mt.Target, err, xerr.KV{})
 	}
+	//l.Debug("touch file")
+	//if err := Touch(mt.Target); err != nil {
+	//	return err
+	//}
 	l.Debug("mount")
 	if err := unix.Mount(mt.Source, mt.Target, mt.FSType,
 		mt.Flags, mt.Data); err != nil {

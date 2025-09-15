@@ -17,7 +17,7 @@ func WithLogging[C any](name string, logger *slog.Logger) Middleware[C] {
 				"command", fmt.Sprintf("%T", cmd),
 				"pid", os.Getpid(),
 			)
-			logger.Info(
+			logger.Debug(
 				"info about the process",
 				"ppid", os.Getppid(),
 				"args", os.Args,
@@ -26,14 +26,18 @@ func WithLogging[C any](name string, logger *slog.Logger) Middleware[C] {
 				ctx,
 				logger,
 			)
+
+			logger.Debug("start")
 			if err := next(ctx, cmd); err != nil {
 				var attrs []any
 				if xe, ok := err.(xerr.AttrLog); ok {
 					attrs = xe.LogAttrs()
 				}
 				logger.With(attrs...).Error(err.Error())
+				logger.Debug("finished")
 				return err
 			}
+			logger.Debug("finished")
 			return nil
 		}
 	}

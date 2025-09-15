@@ -19,26 +19,21 @@ import (
 	"sort"
 )
 
-func usage() {
-	_, _ = fmt.Fprintf(os.Stderr, `oci-runtime
-Usage:
-  oci-runtime run
-  oci-runtime init
-  oci-runtime check
-`)
-	os.Exit(2)
-}
-
 func main() {
-	flag.Usage = usage
+	var root string
+	var logpath string
+	var logformat string
+	flag.StringVar(&root, "root", "", "root")
+	flag.StringVar(&logpath, "log", "/tmp/oci-runtime-log.json", "log")
+	flag.StringVar(&logformat, "log-format", "json", "logformat")
 	flag.Parse()
-	if flag.NArg() < 1 {
-		usage()
-	}
-	subcmd := flag.Arg(0)
 
 	_ = config.Load()
-	logger := logging.New(subcmd)
+	logger, err := logging.New(flag.Arg(0), logpath)
+	if err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+	}
 	ctx := context.Background()
 
 	cmd := NewCmd(
@@ -78,7 +73,7 @@ func main() {
 	)
 
 	sort.Sort(cli.FlagsByName(cmd.Flags))
-	err := cmd.Run(ctx, os.Args)
+	err = cmd.Run(ctx, os.Args)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)

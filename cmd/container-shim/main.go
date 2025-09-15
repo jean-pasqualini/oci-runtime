@@ -45,7 +45,7 @@ func do(ctx context.Context) error {
 	)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Pdeathsig: syscall.SIGKILL,
-		Setpgid:   true,
+		//Setpgid:   true,
 	}
 	// Optional
 	cmd.Stdin, cmd.Stdout, cmd.Stderr = os.Stdin, os.Stdout, os.Stderr
@@ -53,7 +53,7 @@ func do(ctx context.Context) error {
 	if err := cmd.Run(); err != nil {
 		return err
 	}
-	
+
 	// Wait init
 	var waitInit syscall.WaitStatus
 	_, err := syscall.Wait4(-1, &waitInit, 0, nil)

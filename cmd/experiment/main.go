@@ -2,17 +2,12 @@ package main
 
 import "fmt"
 
-type Dummy struct {
-	Color string
-}
-
-func debug(v struct{}) {
-	fmt.Println(v)
-}
-
-type Magic = struct {
-}
-
+// go run --tags medium ./cmd/experiment --root abc run --color chocolate cid
 func main() {
-	fmt.Println("hello")
+	var s string = "a"
+	if true {
+		s := "b"
+		fmt.Println(s)
+	}
+	fmt.Println(s)
 }

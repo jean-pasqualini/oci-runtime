@@ -6,11 +6,12 @@ import (
 	"oci-runtime/internal/infrastructure/technical/logging"
 	"os"
 	"path"
+	"path/filepath"
 )
 
 type StartCmd struct {
-	Name      string
-	StatePath string
+	Name         string
+	MetadataRoot string
 }
 
 func NewStartHandler(ipcFactory IpcFactory) mw.HandlerFunc[StartCmd] {
@@ -24,8 +25,9 @@ type startHandler struct {
 
 func (h *startHandler) handle(ctx context.Context, cmd StartCmd) error {
 	logger := logging.FromContext(ctx)
-	logger.Info("oci-runtime start")
-	ePipeWritePath := path.Join(cmd.StatePath, "exec.fifo")
+	containerStateFolder := filepath.Join(cmd.MetadataRoot, cmd.Name)
+
+	ePipeWritePath := path.Join(containerStateFolder, "exec.fifo")
 
 	ePipeWriteFD, err := os.OpenFile(ePipeWritePath, os.O_WRONLY, 0)
 	if err != nil {
@@ -34,12 +36,10 @@ func (h *startHandler) handle(ctx context.Context, cmd StartCmd) error {
 	execPipe := h.ipcFactory(nil, ePipeWriteFD)
 	defer execPipe.Close()
 	var giveStartOrder bool
-	if err := execPipe.Send(&giveStartOrder); err != nil {
+	if err := execPipe.Send(ctx, &giveStartOrder); err != nil {
 		return err
 	}
 
-	logger.Info("start order given")
-
-	logger.Info("oci runtime finished")
+	logger.Debug("start order given")
 	return nil
 }

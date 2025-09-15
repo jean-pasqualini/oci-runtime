@@ -3,6 +3,7 @@ package logging
 import (
 	"fmt"
 	"github.com/lmittmann/tint"
+	"github.com/samber/slog-multi"
 	"log/slog"
 	"os"
 	"time"
@@ -10,8 +11,18 @@ import (
 
 type Logger = slog.Logger
 
-func New(name string) *Logger {
-	h := tint.NewHandler(os.Stdout, &tint.Options{
+func New(name string, path string) (*Logger, error) {
+	f, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return nil, err
+	}
+
+	fileHandler := slog.NewJSONHandler(f, &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+		// AddSource: true, // optionnel: ajoute fichier:ligne
+	})
+
+	consoleHandler := tint.NewHandler(os.Stdout, &tint.Options{
 		TimeFormat: time.RFC3339,
 		Level:      slog.LevelDebug,
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
@@ -21,5 +32,5 @@ func New(name string) *Logger {
 			return a
 		},
 	})
-	return slog.New(h)
+	return slog.New(slogmulti.Fanout(consoleHandler, fileHandler)), nil
 }
