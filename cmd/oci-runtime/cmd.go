@@ -108,7 +108,7 @@ func NewCmd(actions Actions) cli.Command {
 				},
 				Before: requireExactArgs(1, "<name>"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return actions.Create()(ctx, app.CreateCmd{
+					err := actions.Create()(ctx, app.CreateCmd{
 						Name:          cmd.StringArg("name"),
 						MetadataRoot:  cmd.String("root"),
 						BundleRoot:    cmd.String("bundle"),
@@ -117,6 +117,18 @@ func NewCmd(actions Actions) cli.Command {
 						PidFile:       cmd.String("pid-file"),
 						ConsoleSocket: cmd.String("console-socket"),
 					})
+					if err != nil {
+						// Debug purpose
+						/**
+						data, debugErr := os.ReadFile(cmd.String("log")) // reads the entire file
+						if debugErr != nil {
+							return err
+						}
+						fmt.Println(string(data))
+						*/
+						return err
+					}
+					return nil
 				},
 			},
 			{

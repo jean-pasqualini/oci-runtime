@@ -9,6 +9,7 @@ import (
 	"oci-runtime/internal/infrastructure/technical/logging"
 	"oci-runtime/internal/infrastructure/technical/xerr"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -72,25 +73,28 @@ func (h *initHandler) prepareProcess(ctx context.Context) error {
 }
 
 func (h *initHandler) configureIsolation(ctx context.Context, containerRoot string) error {
-	if err := h.p.Mount.MakePrivate(ctx, "/"); err != nil {
-		return xerr.Op("make private /", err, xerr.KV{})
-	}
-	if err := h.switchRoot(ctx, containerRoot); err != nil {
-		return xerr.Op("enter root", err, xerr.KV{})
-	}
 
 	return nil
 }
 
-func (h *initHandler) setupFilesystem(ctx context.Context, mounts []domain.ContainerMountConfiguration) error {
+func (h *initHandler) setupFilesystem(ctx context.Context, rootPath string, mounts []domain.ContainerMountConfiguration) error {
+	if err := h.p.Mount.MakePrivate(ctx, "/"); err != nil {
+		return xerr.Op("make private /", err, xerr.KV{})
+	}
+
 	l := logging.FromContext(ctx)
 	for _, m := range mounts {
+		m.Destination = filepath.Join(rootPath, m.Destination)
 		l.Info("setup mount point", "source", m.Source, "destination", m.Destination, "type", m.Type)
 		if m.Type == "proc" {
 			if err := h.p.Mount.Mount(ctx, m); err != nil {
 				return xerr.Op("mount fs", err, xerr.KV{"destination": m.Destination})
 			}
 		}
+	}
+
+	if err := h.switchRoot(ctx, rootPath); err != nil {
+		return xerr.Op("enter root", err, xerr.KV{})
 	}
 
 	return nil
@@ -146,10 +150,8 @@ func (h *initHandler) handle(ctx context.Context, _ InitCmd) error {
 	if err := h.prepareProcess(ctx); err != nil {
 		l.Warn("hostname set failed", "error", err)
 	}
-	if err := h.configureIsolation(ctx, containerConfig.Root.Path); err != nil {
-		return err
-	}
-	if err := h.setupFilesystem(ctx, containerConfig.Mounts); err != nil {
+
+	if err := h.setupFilesystem(ctx, containerConfig.Root.Path, containerConfig.Mounts); err != nil {
 		return xerr.Op("setup filesystem", err, xerr.KV{})
 	}
 	if err := h.configureNetwork(ctx); err != nil {

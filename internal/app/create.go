@@ -14,6 +14,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 )
 
@@ -75,7 +76,27 @@ func (h *createHandler) sendFDOverSocket(socket string, fd int) error {
 	return nil
 }
 
-func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consoleSocket string, metadataRoot string, containerMedadataRoot string) (Ipc, error) {
+func (h *createHandler) createInitCmdline() []string {
+	args := os.Args[1:]
+
+	// 2) by default keep all
+	cut := args
+
+	// 3) cut after "create"
+	for i, a := range args {
+		if a == "create" || a == "run" {
+			cut = args[:i]
+			break
+		}
+	}
+
+	// 4) append "run"
+	cut = append(cut, "init")
+
+	return cut
+}
+
+func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consoleSocket string, containerMedadataRoot string) (Ipc, error) {
 	l := logging.FromContext(ctx)
 
 	// Bidirectional SYNC_PIPE
@@ -104,9 +125,9 @@ func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consol
 	containerCommand := exec.CommandContext(
 		ctx,
 		"/proc/self/exe",
-		fmt.Sprintf("--root=\"%s\"", metadataRoot),
-		"init",
+		h.createInitCmdline()...,
 	)
+	l.Error("cmdline init", "name", containerCommand.Path, "args", strings.Join(containerCommand.Args, " "))
 	var consoleMaster *os.File = nil
 	if consoleSocket != "" {
 		master, consoleSlave, err := pty.Open()
@@ -195,7 +216,9 @@ func (h *createHandler) handle(ctx context.Context, cmd CreateCmd) error {
 		})
 	}
 
-	syncPipe, err := h.creatingInit(ctx, cmd.PidFile, cmd.ConsoleSocket, cmd.MetadataRoot, containerStateFolder)
+	logger.Info("init logfile path", "path", cmd.LogPath)
+
+	syncPipe, err := h.creatingInit(ctx, cmd.PidFile, cmd.ConsoleSocket, containerStateFolder)
 	if err != nil {
 		return xerr.Op("creating init", err, xerr.KV{})
 	}

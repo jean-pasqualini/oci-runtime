@@ -16,27 +16,45 @@ func NewManager() *manager {
 	return &manager{}
 }
 
+func (m *manager) createTarget(ctx context.Context, mt Mount) error {
+	l := logging.FromContext(ctx)
+	if mt.FSType == "bind" {
+		isSourceDir, err := isDir(mt.Source)
+		if err != nil {
+			return err
+		}
+		if isSourceDir {
+			l.Debug("make directory")
+			if err := os.MkdirAll(mt.Target, 0o555); err != nil {
+				return xerr.Op("mkdir "+mt.Target, err, xerr.KV{})
+			}
+		} else {
+			l.Debug("create file")
+			if err := touch(mt.Target); err != nil {
+				return err
+			}
+		}
+	} else {
+		l.Debug("make directory")
+		if err := os.MkdirAll(mt.Target, 0o555); err != nil {
+			return xerr.Op("mkdir "+mt.Target, err, xerr.KV{})
+		}
+	}
+
+	return nil
+}
+
 func (m *manager) Mount(ctx context.Context, mc domain.ContainerMountConfiguration) error {
 	l := logging.FromContext(ctx)
 	mt := mapToMount(mc)
-	/**
-	mt := Mount{
-		Source: "proc",
-		Target: "/proc",
-		FSType: "proc",
-		Flags:  uintptr(unix.MS_NOSUID | unix.MS_NODEV | unix.MS_NOEXEC),
-	*/
 	l = l.With("params", mt)
 	l.Debug("unmount")
 	_ = unix.Unmount(mt.Target, 0)
-	l.Debug("make directory")
-	if err := os.MkdirAll(mt.Target, 0o555); err != nil {
-		return xerr.Op("mkdir "+mt.Target, err, xerr.KV{})
+
+	if err := m.createTarget(ctx, mt); err != nil {
+		return err
 	}
-	//l.Debug("touch file")
-	//if err := Touch(mt.Target); err != nil {
-	//	return err
-	//}
+
 	l.Debug("mount")
 	if err := unix.Mount(mt.Source, mt.Target, mt.FSType,
 		mt.Flags, mt.Data); err != nil {

@@ -39,6 +39,12 @@ func mapToMount(mc domain.ContainerMountConfiguration) Mount {
 		}
 	}
 
+	if flags&unix.MS_BIND != 0 {
+		// Easy to ensure we have always that type
+		// Even if the kernel doesn't care of the type for a bind
+		mc.Type = "bind"
+	}
+
 	return Mount{
 		Source: mc.Source,
 		Target: mc.Destination,
