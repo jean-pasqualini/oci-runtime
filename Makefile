@@ -14,9 +14,9 @@ docker-build:
 docker-run-unconfined: docker-build
 	docker run --privileged --security-opt seccomp=unconfined --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
 docker-run-least: docker-build
-	docker run --cap-add CAP_SYS_ADMIN --cap-add CAP_NET_ADMIN	--security-opt seccomp=$(PWD)/docker-default-patched.json --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
+	docker run --cap-add CAP_SYS_ADMIN --cap-add CAP_NET_ADMIN	--security-opt seccomp=$(PWD)/docker-default-patched.json --security-opt apparmor=everything --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
 build:
-	go build -tags $(LEVEL) -o /tmp/oci-runtime -- ./cmd/oci-runtime
+	go build -buildvcs=false -tags $(LEVEL) -o /tmp/oci-runtime -- ./cmd/oci-runtime
 test:
 	go test ./...
 run-shim:
@@ -32,6 +32,16 @@ start:
 	go run -tags $(LEVEL) ./cmd/oci-runtime --root /tmp/state start cid
 run: delete
 	go run -tags $(LEVEL) ./cmd/oci-runtime --root /tmp/state run --bundle /app/bundle cid
+run-strace: build
+	# trace go run and follow children, outputs per-pid logs in /tmp
+	strace -s 200 -ttt \
+	  -e trace=execve,execveat,open,openat,mount,umount2,clone,fork,vfork \
+	  /tmp/oci-runtime --root /tmp/state run --bundle /app/bundle cid
+run-strace-follow: build
+	# trace go run and follow children, outputs per-pid logs in /tmp
+	strace -ff -f -o /tmp/strace.log -s 200 -ttt \
+	  -e trace=execve,execveat,open,openat,mount,umount2,clone,fork,vfork \
+	  /tmp/oci-runtime --root /tmp/state run --bundle /app/bundle cid
 lint:
 	golangci-lint run  ./...
 lint-diff:

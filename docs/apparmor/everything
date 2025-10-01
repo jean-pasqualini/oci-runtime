@@ -1,0 +1,27 @@
+#include <tunables/global>
+
+profile everything flags=(attach_disconnected,mediate_deleted) {
+  # Autoriser toutes les classes courantes
+  file,
+  capability,
+  network,
+  mount,
+  umount,
+  signal,
+  ptrace,
+  unix,
+  # dbus,            # (décommente si ton userspace AppArmor supporte dbus)
+
+  # Autoriser lecture/écriture/verrouillage sur tout le FS
+  /** rwmkl,
+
+  # Autoriser l'exec partout (héritée)
+  /** ix,
+
+  # Qualificatifs pratiques pour /proc (souvent utiles)
+  /proc/** r,
+  /proc/self/exe mr,
+  /proc/self/exe ix,
+  /proc/[0-9]*/exe mr,
+  /proc/[0-9]*/exe ix,
+}

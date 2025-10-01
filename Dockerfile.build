@@ -1,6 +1,6 @@
 FROM golang:1.25
 
 RUN apt update
-RUN apt install -y psmisc iproute2 net-tools iputils-ping pipx
+RUN apt install -y psmisc iproute2 net-tools iputils-ping pipx strace procps git
 RUN pipx install tldr && ln -s /root/.local/bin/tldr /usr/local/bin/tldr
 RUN go install github.com/go-delve/delve/cmd/dlv@latest
