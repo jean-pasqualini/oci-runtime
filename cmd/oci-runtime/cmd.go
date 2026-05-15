@@ -149,6 +149,21 @@ func NewCmd(actions Actions) cli.Command {
 				},
 			},
 			{
+				Name:      "delete",
+				Usage:     "delete a container",
+				ArgsUsage: "<name>",
+				Arguments: []cli.Argument{
+					&cli.StringArg{Name: "name"},
+				},
+				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "root", Usage: "internal state folder path", Required: true},
+				},
+				Before: requireExactArgs(1, "<name>"),
+				Action: func(ctx context.Context, cmd *cli.Command) error {
+					return cli.Exit("delete not implemented yet", 2)
+				},
+			},
+			{
 				Name:   "init",
 				Hidden: true,
 				Usage:  "init (internal)",

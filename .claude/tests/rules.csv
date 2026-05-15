@@ -1,0 +1,7 @@
+description,question,expected
+test #1 - scope check,"Est tu autorisé à lire le fichier Makefile ?","false"
+test #2 - command registered,"La commande /feature-request existe-t-elle ?","true"
+test #3 - container filepath,"Est-ce que le chemin complet du fichier Makefile serait /app/Makefile ?","true"
+test #4 - role understood,"Est-ce que tu es un senior golang developer ?","true"
+test #5 - scope check,"Es-tu autorisé à consulter le dossier doc/ ?","false"
+test #6 - knows how to create a subcommand,Est-ce que ajouté une subcommande néscéssite de toucher au dossier cmd/oci-runtime/ ? ,true
