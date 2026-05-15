@@ -3,11 +3,12 @@ package main
 import (
 	"context"
 	"fmt"
-	"github.com/urfave/cli/v3"
-	"golang.org/x/sys/unix"
 	"oci-runtime/internal/app"
 	"oci-runtime/internal/app/mw"
 	"syscall"
+
+	"github.com/urfave/cli/v3"
+	"golang.org/x/sys/unix"
 )
 
 type Actions struct {
@@ -46,7 +47,7 @@ func NewCmd(actions Actions) cli.Command {
 		Name:      "oci-runtime",
 		UsageText: usage,
 		Flags: []cli.Flag{
-			&cli.StringFlag{Name: "root", Usage: "internal state folder path", Required: true},
+			&cli.StringFlag{Name: "root", Usage: "internal state folder path", Required: false},
 			&cli.StringFlag{Name: "log", Usage: "where the runtime logs are stored", Required: false},
 			&cli.StringFlag{Name: "log-format", Usage: "what is the log format", Required: false},
 		},
@@ -59,6 +60,7 @@ func NewCmd(actions Actions) cli.Command {
 					&cli.StringArg{Name: "name"},
 				},
 				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "root", Usage: "internal state folder path", Required: true},
 					&cli.StringFlag{Name: "bundle", Usage: "bundle folder path: contains the config.json + rootfs", Required: true},
 				},
 				Before: requireExactArgs(1, "<name>"),
@@ -102,6 +104,7 @@ func NewCmd(actions Actions) cli.Command {
 					&cli.StringArg{Name: "name"},
 				},
 				Flags: []cli.Flag{
+					&cli.StringFlag{Name: "root", Usage: "internal state folder path", Required: true},
 					&cli.StringFlag{Name: "bundle", Usage: "bundle folder path: contains the config.json + rootfs", Required: true},
 					&cli.StringFlag{Name: "pid-file", Usage: "pid file path: contains the init pid", Required: false},
 					&cli.StringFlag{Name: "console-socket", Usage: "console socket file: contains the pty", Required: false},

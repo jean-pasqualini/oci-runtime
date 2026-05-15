@@ -11,8 +11,10 @@ docker-build:
 # --security-opt seccomp=unconfined
 # --cap-add CAP_SYS_ADMIN
 # --security-opt seccomp=$(PWD)/docker-default-patched.json
+docker-run-unconfined-infinite: docker-build
+	docker run --name=dev-env --privileged --security-opt seccomp=unconfined --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build oci-container:build sleep infinity
 docker-run-unconfined: docker-build
-	docker run --privileged --security-opt seccomp=unconfined --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
+	docker run --name=dev-env --privileged --security-opt seccomp=unconfined --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
 docker-run-least: docker-build
 	docker run --cap-add CAP_SYS_ADMIN --cap-add CAP_NET_ADMIN	--security-opt seccomp=$(PWD)/docker-default-patched.json --security-opt apparmor=everything --rm -w /app -v $(PWD):/app -v go-mod-cache:/go/pkg/mod -v go-build-cache:/root/.cache/go-build -it oci-container:build bash
 build:
