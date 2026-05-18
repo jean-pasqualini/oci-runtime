@@ -44,3 +44,7 @@ type Process interface {
 	SetComm(ctx context.Context, name string) error
 	Exec(ctx context.Context, argv []string, env []string) error
 }
+
+type ContainerStateLoader interface {
+	Load(ctx context.Context, root, name string) (domain.ContainerState, error)
+}

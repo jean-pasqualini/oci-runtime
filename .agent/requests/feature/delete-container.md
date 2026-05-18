@@ -3,7 +3,7 @@ description: Add a `delete` subcommand to remove a previously created/stopped co
 
 tasks:
 - [x] Wire the `delete` subcommand in `cmd/oci-runtime/` (register in `cmd.go`, hook into `main.go`); accept `--root` and a container name argument, mirroring `create`/`start`/`run` flag conventions.
-- [ ] Add a delete handler under `internal/app/` that loads the container state from `--root/<name>` and orchestrates teardown via the infrastructure layer.
+- [x] Add a delete handler under `internal/app/` that loads the container state from `--root/<name>` and orchestrates teardown via the infrastructure layer.
 - [ ] Refuse deletion when the container is in a running state (read state, return a clear error); only proceed when stopped/created.
 - [ ] Release linux resources via `infrastructure/linux/` — unmount the rootfs, drop namespaces, remove cgroup/proc artifacts left by create/start.
 - [ ] Tear down any ipc transport endpoints under `infrastructure/transport/ipc/` that were established for this container.
@@ -13,6 +13,7 @@ tasks:
 
 Memory:
 - Task 1 (2026-05-15): Registered `delete` subcommand in `cmd/oci-runtime/cmd.go` with `<name>` arg and required `--root` flag, mirroring `create` flag style (local required flag rather than relying on the global one). Action is a stub returning `cli.Exit("delete not implemented yet", 2)`; wiring through the `Actions` struct + `main.go` is deferred to task 2, when `app.DeleteCmd` / `NewDeleteHandler` exist. Build verified via `go run -tags medium ./cmd/oci-runtime check`.
+- Task 2 (2026-05-18): Added `app.DeleteCmd{Name, MetadataRoot}` + `app.NewDeleteHandler(ContainerStateLoader)` in `internal/app/delete.go`. New port `ContainerStateLoader` in `ports.go` returning `domain.ContainerState` (minimal struct `{Name, Status}` created at `internal/domain/container_state.go`; will grow in tasks 3+). Handler loads state via port, wraps load error with `xerr.Op`, leaves teardown as TODOs for tasks 3-6. Wired into `Actions.Delete` + `main.go`; cmd.go stub replaced with real action call. main.go injects an inline `stubStateLoader` returning `errors.New("state loader not implemented (task 4)")` — task 4 must replace it with a real infra impl.
 
 how to test:
 1. `run` subcommand with `--root /tmp/state --bundle /app/bundle <name>`, stop it, then invoke the new `delete --root /tmp/state <name>` and check `/tmp/state/<name>` is removed and no stale mounts/namespaces remain.

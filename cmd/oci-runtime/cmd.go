@@ -14,6 +14,7 @@ import (
 type Actions struct {
 	Create func() mw.HandlerFunc[app.CreateCmd]
 	Start  func() mw.HandlerFunc[app.StartCmd]
+	Delete func() mw.HandlerFunc[app.DeleteCmd]
 	Init   func() mw.HandlerFunc[app.InitCmd]
 	Check  func() mw.HandlerFunc[app.CheckComamnd]
 }
@@ -160,7 +161,10 @@ func NewCmd(actions Actions) cli.Command {
 				},
 				Before: requireExactArgs(1, "<name>"),
 				Action: func(ctx context.Context, cmd *cli.Command) error {
-					return cli.Exit("delete not implemented yet", 2)
+					return actions.Delete()(ctx, app.DeleteCmd{
+						Name:         cmd.StringArg("name"),
+						MetadataRoot: cmd.String("root"),
+					})
 				},
 			},
 			{
