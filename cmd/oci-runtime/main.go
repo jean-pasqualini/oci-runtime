@@ -2,13 +2,12 @@ package main
 
 import (
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"github.com/urfave/cli/v3"
 	"oci-runtime/internal/app"
 	"oci-runtime/internal/app/mw"
-	"oci-runtime/internal/domain"
+	"oci-runtime/internal/infrastructure/container"
 	"oci-runtime/internal/infrastructure/linux/mount"
 	"oci-runtime/internal/infrastructure/linux/network"
 	"oci-runtime/internal/infrastructure/linux/ns"
@@ -20,13 +19,6 @@ import (
 	"os"
 	"sort"
 )
-
-// stubStateLoader is a placeholder until task 4 lands the real state infra.
-type stubStateLoader struct{}
-
-func (stubStateLoader) Load(ctx context.Context, root, name string) (domain.ContainerState, error) {
-	return domain.ContainerState{}, errors.New("state loader not implemented (task 4)")
-}
 
 func main() {
 	var root string
@@ -61,7 +53,7 @@ func main() {
 			},
 			Delete: func() mw.HandlerFunc[app.DeleteCmd] {
 				return mw.Chain(
-					app.NewDeleteHandler(stubStateLoader{}),
+					app.NewDeleteHandler(container.NewManager()),
 					mw.WithLogging[app.DeleteCmd]("app", logger),
 				)
 			},

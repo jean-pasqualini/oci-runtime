@@ -1,7 +1,7 @@
 ### Rules to follow
 - Don't use any terminal command expect the allowed ones.
 - Don't read any file outside of your scope
-- Don't list files under any circumstance in folder nor use search like grep. (no ls, grep)
+- Don't list files under any circumstance in folder nor use search like grep. (no ls, grep, find)
 - Don't write any file
 - Don't do any search
 - Say it when you don't know

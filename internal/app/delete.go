@@ -2,7 +2,9 @@ package app
 
 import (
 	"context"
+	"errors"
 	"oci-runtime/internal/app/mw"
+	"oci-runtime/internal/domain"
 	"oci-runtime/internal/infrastructure/technical/logging"
 	"oci-runtime/internal/infrastructure/technical/xerr"
 )
@@ -12,20 +14,20 @@ type DeleteCmd struct {
 	MetadataRoot string
 }
 
-func NewDeleteHandler(state ContainerStateLoader) mw.HandlerFunc[DeleteCmd] {
+func NewDeleteHandler(state ContainerStateManager) mw.HandlerFunc[DeleteCmd] {
 	h := deleteHandler{state: state}
 	return h.handle
 }
 
 type deleteHandler struct {
-	state ContainerStateLoader
+	state ContainerStateManager
 }
 
 func (h *deleteHandler) handle(ctx context.Context, c DeleteCmd) error {
 	l := logging.FromContext(ctx)
 	l.With("name", c.Name).Debug("Delete handler")
 
-	_, err := h.state.Load(ctx, c.MetadataRoot, c.Name)
+	state, err := h.state.Load(ctx, c.MetadataRoot, c.Name)
 	if err != nil {
 		return xerr.Op("load container state", err, xerr.KV{
 			"name": c.Name,
@@ -33,10 +35,17 @@ func (h *deleteHandler) handle(ctx context.Context, c DeleteCmd) error {
 		})
 	}
 
-	// TODO(task 3): refuse if running
-	// TODO(task 4): linux teardown (mounts, namespaces, cgroup/proc)
-	// TODO(task 5): ipc transport teardown
-	// TODO(task 6): remove --root/<name> state directory last
+	if state.Status == domain.StatusRunning {
+		return xerr.Op("refuse delete", errors.New("container is running"), xerr.KV{
+			"name":   c.Name,
+			"status": state.Status,
+		})
+	}
 
+	if err := h.state.Remove(ctx, c.MetadataRoot, c.Name); err != nil {
+		return err
+	}
+
+	l.With("name", c.Name).Info("container deleted")
 	return nil
 }

@@ -45,6 +45,7 @@ type Process interface {
 	Exec(ctx context.Context, argv []string, env []string) error
 }
 
-type ContainerStateLoader interface {
+type ContainerStateManager interface {
 	Load(ctx context.Context, root, name string) (domain.ContainerState, error)
+	Remove(ctx context.Context, root, name string) error
 }
