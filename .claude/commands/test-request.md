@@ -13,7 +13,12 @@ BEGIN
 !`ls -al .agent/requests/test/*.md`
 END
 
+Herei is the list of feature the use could write a test for:
+BEGIN
+!`ls -al .agent/requests/feature/*.md`
+END
+
 Test the feature, the technical name is "$ARGUMENTS".
 If the technical name is known, just load the task.
-Else ask the user for it plus ask him what feature he wants test.
+Else ask the user for what feature-request he wants to test.
 

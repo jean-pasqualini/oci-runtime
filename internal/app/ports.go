@@ -47,5 +47,6 @@ type Process interface {
 
 type ContainerStateManager interface {
 	Load(ctx context.Context, root, name string) (domain.ContainerState, error)
+	Save(ctx context.Context, root string, state domain.ContainerState) error
 	Remove(ctx context.Context, root, name string) error
 }

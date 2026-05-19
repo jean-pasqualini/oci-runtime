@@ -4,6 +4,7 @@ import (
 	"context"
 	"oci-runtime/internal/app/mw"
 	"oci-runtime/internal/infrastructure/technical/logging"
+	"oci-runtime/internal/infrastructure/technical/xerr"
 	"os"
 	"path"
 	"path/filepath"
@@ -38,6 +39,9 @@ func (h *startHandler) handle(ctx context.Context, cmd StartCmd) error {
 	var giveStartOrder bool
 	if err := execPipe.Send(ctx, &giveStartOrder); err != nil {
 		return err
+	}
+	if err := os.Remove(ePipeWritePath); err != nil {
+		return xerr.Op("remove exec fifo", err, xerr.KV{"path": ePipeWritePath})
 	}
 
 	logger.Debug("start order given")

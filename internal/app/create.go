@@ -16,6 +16,7 @@ import (
 	"path/filepath"
 	"strings"
 	"syscall"
+	"time"
 )
 
 type CreateCmd struct {
@@ -28,13 +29,14 @@ type CreateCmd struct {
 	ConsoleSocket string
 }
 
-func NewCreateHandler(factory IpcFactory) mw.HandlerFunc[CreateCmd] {
-	h := createHandler{ipcFactory: factory}
+func NewCreateHandler(factory IpcFactory, state ContainerStateManager) mw.HandlerFunc[CreateCmd] {
+	h := createHandler{ipcFactory: factory, state: state}
 	return h.handle
 }
 
 type createHandler struct {
 	ipcFactory IpcFactory
+	state      ContainerStateManager
 }
 
 func (h *createHandler) withNamespace(attr syscall.SysProcAttr) syscall.SysProcAttr {
@@ -96,29 +98,29 @@ func (h *createHandler) createInitCmdline() []string {
 	return cut
 }
 
-func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consoleSocket string, containerMedadataRoot string) (Ipc, error) {
+func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consoleSocket string, containerMedadataRoot string) (Ipc, int, error) {
 	l := logging.FromContext(ctx)
 
 	// Bidirectional SYNC_PIPE
 	initRead, ociWrite, err := os.Pipe()
 	if err != nil {
-		return nil, xerr.Op("bidirectional SYNC_PIPE", err, xerr.KV{})
+		return nil, 0, xerr.Op("bidirectional SYNC_PIPE", err, xerr.KV{})
 	}
 	ociRead, initWrite, err := os.Pipe()
 	if err != nil {
-		return nil, xerr.Op("bidirectional SYNC_PIPE", err, xerr.KV{})
+		return nil, 0, xerr.Op("bidirectional SYNC_PIPE", err, xerr.KV{})
 	}
 
 	// Unidirectional KICK OFF pipe
 	execFifoPath := filepath.Join(containerMedadataRoot, "exec.fifo")
 	if err := unix.Mkfifo(execFifoPath, 0622); err != nil {
-		return nil, xerr.Op("create exec fifo", err, xerr.KV{
+		return nil, 0, xerr.Op("create exec fifo", err, xerr.KV{
 			"exec_fifo_path": execFifoPath,
 		})
 	}
 	execFifoFD, err := unix.Open(execFifoPath, unix.O_PATH|unix.O_CLOEXEC, 0)
 	if err != nil {
-		return nil, xerr.Op("unable to open in path mode the exec fifo", err, xerr.KV{
+		return nil, 0, xerr.Op("unable to open in path mode the exec fifo", err, xerr.KV{
 			"exec_fifo_path": execFifoPath,
 		})
 	}
@@ -133,7 +135,7 @@ func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consol
 		master, consoleSlave, err := pty.Open()
 		consoleMaster = master
 		if err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 		defer consoleMaster.Close()
 		defer consoleSlave.Close()
@@ -166,26 +168,26 @@ func (h *createHandler) creatingInit(ctx context.Context, pidFile string, consol
 	}
 	l.Debug("start fork to run init")
 	if err := containerCommand.Start(); err != nil {
-		return nil, xerr.Op("start fork to run init", err, xerr.KV{})
+		return nil, 0, xerr.Op("start fork to run init", err, xerr.KV{})
 	}
 	if pidFile != "" {
 		if err := os.WriteFile(pidFile, []byte(fmt.Sprintf("%d", containerCommand.Process.Pid)), 0644); err != nil {
-			return nil, xerr.Op("write process pid file", err, xerr.KV{})
+			return nil, 0, xerr.Op("write process pid file", err, xerr.KV{})
 		}
 	}
 	if err := initRead.Close(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if err := initWrite.Close(); err != nil {
-		return nil, err
+		return nil, 0, err
 	}
 	if consoleMaster != nil {
 		if err := h.sendFDOverSocket(consoleSocket, int(consoleMaster.Fd())); err != nil {
-			return nil, err
+			return nil, 0, err
 		}
 	}
 
-	return h.ipcFactory(ociRead, ociWrite), err
+	return h.ipcFactory(ociRead, ociWrite), containerCommand.Process.Pid, err
 }
 
 func (h *createHandler) fetchContainerConfig(ctx context.Context, fd *os.File) (domain.ContainerConfiguration, error) {
@@ -218,7 +220,7 @@ func (h *createHandler) handle(ctx context.Context, cmd CreateCmd) error {
 
 	logger.Info("init logfile path", "path", cmd.LogPath)
 
-	syncPipe, err := h.creatingInit(ctx, cmd.PidFile, cmd.ConsoleSocket, containerStateFolder)
+	syncPipe, pid, err := h.creatingInit(ctx, cmd.PidFile, cmd.ConsoleSocket, containerStateFolder)
 	if err != nil {
 		return xerr.Op("creating init", err, xerr.KV{})
 	}
@@ -244,6 +246,16 @@ func (h *createHandler) handle(ctx context.Context, cmd CreateCmd) error {
 		return err
 	}
 	logger.Info("init process bootstraped")
+
+	containerState := domain.ContainerState{
+		Name:      cmd.Name,
+		Pid:       pid,
+		Bundle:    cmd.BundleRoot,
+		CreatedAt: time.Now(),
+	}
+	if err := h.state.Save(ctx, cmd.MetadataRoot, containerState); err != nil {
+		return xerr.Op("persist state", err, xerr.KV{"name": cmd.Name})
+	}
 
 	return nil
 }

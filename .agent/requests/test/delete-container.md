@@ -6,7 +6,7 @@
 - Version / commit:  workflow-ai-dev @ 878db72
 - Author:            Jean Pasqualini
 - Date created:      2026-05-18
-- Last executed:     2026-05-18
+- Last executed:     2026-05-19
 
 ## 2. Objective
 Verify that the `delete` subcommand removes a previously created or stopped container's on-disk state under `--root`, refuses to delete a running container, and surfaces clear errors for unknown containers. A passing run demonstrates the delete-handler + `container.Manager` integration is safe to ship for stopped/created containers.
@@ -137,8 +137,8 @@ Verify that the `delete` subcommand removes a previously created or stopped cont
 
 - TC-001: baseline check is healthy
   Status: PASSED
-  Iteration: 1
-  Notes: check exit 0; CAP_SYS_ADMIN effective.
+  Iteration: 2
+  Notes: Re-run 2026-05-19 (post state-persistence task 2). check exit 0; CAP_SYS_ADMIN effective. Output shape identical to iteration 1.
 - TC-002: delete removes state dir after a run completes
   Status: PASSED
   Iteration: 1
@@ -161,5 +161,5 @@ Verify that the `delete` subcommand removes a previously created or stopped cont
   Notes: exit 0; same shape as TC-001.
 - TC-007: delete-while-running refusal (known feature gap)
   Status: FAILED (documented per §10)
-  Iteration: 2
-  Notes: Re-run 2026-05-18 @ 878db72. Container c3 started (pid 2691, /bin/sh -l); delete issued while running → exit 0 instead of refusing; /tmp/state/c3 removed. Same outcome as iteration 1 — Manager.Load returns Status=="" so refusal check at internal/app/delete.go:38-43 remains dead code. Not blocking exit criteria.
+  Iteration: 3
+  Notes: Re-run 2026-05-19 @ b81f6e6. Container c3 started (init pid 117 running /bin/sh -l via run subcommand); delete issued while running → exit 0, log "container deleted"; /tmp/state/c3 removed. Same outcome as iterations 1 & 2 — Manager.Load returns Status=="" so refusal check at internal/app/delete.go:38-43 remains dead code. Not blocking exit criteria.

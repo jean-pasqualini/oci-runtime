@@ -37,11 +37,13 @@ func main() {
 	}
 	ctx := context.Background()
 
+	stateMgr := container.NewManager()
+
 	cmd := NewCmd(
 		Actions{
 			Create: func() mw.HandlerFunc[app.CreateCmd] {
 				return mw.Chain(
-					app.NewCreateHandler(ipc.NewSyncPipe),
+					app.NewCreateHandler(ipc.NewSyncPipe, stateMgr),
 					mw.WithLogging[app.CreateCmd]("app", logger),
 				)
 			},
@@ -53,7 +55,7 @@ func main() {
 			},
 			Delete: func() mw.HandlerFunc[app.DeleteCmd] {
 				return mw.Chain(
-					app.NewDeleteHandler(container.NewManager()),
+					app.NewDeleteHandler(stateMgr),
 					mw.WithLogging[app.DeleteCmd]("app", logger),
 				)
 			},

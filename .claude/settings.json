@@ -1,7 +1,13 @@
 {
+  "autoMemoryEnabled": false,
   "permissions": {
     "allow": [
       "Bash(go *)"
+    ],
+    "deny": [
+      "Bash(* ls *)",
+      "Bash(* find *)",
+      "Bash(* grep *)"
     ]
   },
   "hooks": {
